@@ -7,7 +7,7 @@ import { MongoClient } from "mongodb";
 dotenv.config();
 const app = express();
 const PORT = 4002;
-const MONGO_URL = process.env.MONGO_URL;
+const MONGO_URL = "mongodb+srv://lunu:lunu1234@cluster0.mxmqnga.mongodb.net/";
 const secretKey = process.env.SECRET_KEY;
 
 export const client = new MongoClient(MONGO_URL);
