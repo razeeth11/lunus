@@ -84,12 +84,12 @@ app.post("/login", async (req, res) => {
     const { email, password } = req.body;
 
     const getUserEmail = async (email) => {
-        const user = await client
-          .db("lunu1")
-          .collection("usersDetails")
-          .findOne({ email : email });
-        return user;
-      };
+      return await client
+        .db("lunu1")
+        .collection("usersDetails")
+        .findOne({ email: email });
+    };
+  
     const userEmail = await getUserEmail(email);
 
     if (!userEmail) {
