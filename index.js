@@ -9,9 +9,17 @@ const app = express();
 const PORT = 4002;
 const MONGO_URL = "mongodb+srv://lunu:lunu1234@cluster0.mxmqnga.mongodb.net/";
 const secretKey = process.env.SECRET_KEY;
-
-export const client = new MongoClient(MONGO_URL);
-client.connect();
+let client
+async function connectDB() {
+  try {
+    client = new MongoClient(MONGO_URL);
+    await client.connect();
+    console.log("Connected to MongoDB");
+  } catch (err) {
+    console.error("Failed to connect to MongoDB", err);
+    process.exit(1); // Exit the process if DB connection fails
+  }
+}
 
 app.use(express.json());
 app.use(cors());
@@ -66,4 +74,6 @@ app.post("/signup", async (req, res) => {
   }
 });
 
-app.listen(PORT, () => console.log(`The port is running on ${PORT}`));
+app.listen(PORT, async() => {
+await connectDB();
+console.log(`The port is running on ${PORT}`)});
