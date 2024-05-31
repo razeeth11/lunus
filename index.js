@@ -9,10 +9,14 @@ const app = express();
 const PORT = 4002;
 const MONGO_URL = "mongodb+srv://lunu:lunu1234@cluster0.mxmqnga.mongodb.net/";
 const secretKey = process.env.SECRET_KEY;
-let client
+let client;
+
 async function connectDB() {
   try {
-    client = new MongoClient(MONGO_URL);
+    client = new MongoClient(MONGO_URL, {
+      useNewUrlParser: true,
+      useUnifiedTopology: true,
+    });
     await client.connect();
     console.log("Connected to MongoDB");
   } catch (err) {
@@ -25,31 +29,30 @@ app.use(express.json());
 app.use(cors());
 
 app.get("/", (req, res) => {
-  res.send("hello world");
+  res.send("Hello World");
 });
 
 app.post("/signup", async (req, res) => {
   const { username, email, password } = req.body;
 
   const getUserEmail = async (email) => {
-    const user = await client
+    return await client
       .db("lunu1")
       .collection("usersDetails")
       .findOne({ email: email });
-    return user;
   };
 
   const userEmail = await getUserEmail(email);
 
-  async function createCollectionByUserID(userID, username, email) {
-    await client.db("lunu1").collection(`${userID}`).insertOne({
+  const createCollectionByUserID = async (userID, username, email) => {
+    await client.db("lunu1").collection(userID).insertOne({
       username: username,
       email: email,
       userID: userID,
     });
-  }
+  };
 
-  async function signupUser(username, email, hashedPassword, userID) {
+  const signupUser = async (username, email, hashedPassword, userID) => {
     await client.db("lunu1").collection("usersDetails").insertOne({
       username: username,
       email: email,
@@ -57,23 +60,31 @@ app.post("/signup", async (req, res) => {
       userID: userID,
       permissions: 21,
     });
-  }
+  };
 
   if (userEmail) {
-    res.send({ status: 0, message: "User already exists" }).status(400);
+    res.status(400).send({ status: 0, message: "User already exists" });
   } else {
     const userID = `${username.toUpperCase()}${Math.floor(
       100000 + Math.random() * 900000
     )}`;
     const hashedPassword = await bcrypt.hash(password, 10);
-    await signupUser(username, email, hashedPassword, userID);
-    await createCollectionByUserID(userID, username, email);
-    res
-      .send({ status: 1, message: "Successfully signed up", userID: userID })
-      .status(200);
+    try {
+      await signupUser(username, email, hashedPassword, userID);
+      await createCollectionByUserID(userID, username, email);
+      res.status(200).send({ status: 1, message: "Successfully signed up", userID: userID });
+    } catch (err) {
+      console.error("Signup Error: ", err);
+      res.status(500).send({ status: 0, message: "Internal Server Error" });
+    }
   }
 });
 
-app.listen(PORT, async() => {
-await connectDB();
-console.log(`The port is running on ${PORT}`)});
+connectDB().then(() => {
+  app.listen(PORT, () => {
+    console.log(`Server is running on port ${PORT}`);
+  });
+}).catch((err) => {
+  console.error("Failed to initialize the server: ", err);
+  process.exit(1);
+});
