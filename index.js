@@ -84,15 +84,13 @@ app.post("/login", async (req, res) => {
   try {
     const { email, password } = req.body;
 
-    const getUserEmail = ()=>{
-       async (email) => {
+    const getUserEmail = async (email) => {
         const user = await client
           .db("lunu1")
           .collection("usersDetails")
-          .findOne({ email });
+          .findOne({ email : email });
         return user;
       };
-    }
     const userEmail = await getUserEmail(email);
 
     if (!userEmail) {
