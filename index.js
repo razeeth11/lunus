@@ -80,6 +80,44 @@ app.post("/signup", async (req, res) => {
   }
 });
 
+app.post("/login", async (req, res) => {
+  try {
+    const { email, password } = req.body;
+
+    const getUserEmail = ()=>{
+       async (email) => {
+        const user = await client
+          .db("lunu1")
+          .collection("usersDetails")
+          .findOne({ email });
+        return user;
+      };
+    }
+    const userEmail = await getUserEmail(email);
+
+    if (!userEmail) {
+      return res.status(400).send({ status: 0, message: "User does not exist" });
+    }
+
+    const isPasswordValid = await bcrypt.compare(password, userEmail.password);
+    if (!isPasswordValid) {
+      return res.status(400).send({ status: 0, message: "Invalid Credentials" });
+    }
+
+    const token = jwt.sign({ userID: userEmail.userID }, secretKey, {
+      expiresIn: "1h",
+    });
+    res.status(200).send({
+      status: 1,
+      message: "Successfully logged in",
+      userID: userEmail.userID,
+      token,
+    });
+  } catch (error) {
+    res.status(500).send({ status: 0, message: "Internal server error" });
+  }
+});
+
 connectDB().then(() => {
   app.listen(PORT, () => {
     console.log(`Server is running on port ${PORT}`);
